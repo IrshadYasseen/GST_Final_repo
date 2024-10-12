@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
+import seaborn as sns 
 from lightgbm import LGBMClassifier
 from sklearn.preprocessing import RobustScaler
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score, classification_report
-
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, log_loss, balanced_accuracy_score, roc_auc_score
 
 
 # Replace the dataset with your validation dataset
@@ -30,6 +31,7 @@ models = {
     "LightGBM": LGBMClassifier(**lightgbm_params)   
 }
 # Function to evaluate model performance
+
 def evaluate_model(model, X_train, y_train, X_test, y_test):
     model.fit(X_train, y_train)
     
@@ -40,17 +42,27 @@ def evaluate_model(model, X_train, y_train, X_test, y_test):
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
+    log_loss_value = log_loss(y_test, model.predict_proba(X_test)[:, 1])
+    balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
     
+    # AUC-ROC calculation if applicable
+    roc_auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])
+
     print(f"Accuracy: {accuracy}")
     print(f"Confusion Matrix:\n{conf_matrix}")
     print(f"Precision: {precision}")
     print(f"Recall: {recall}")
     print(f"F1 Score: {f1}")
+    print(f"Log Loss: {log_loss_value}")
+    print(f"Balanced Accuracy: {balanced_accuracy}")
+    print(f"AUC-ROC: {roc_auc}")
     print("\n" + "-"*50 + "\n")
-    joblib.dump(model,"lgbm.pkl")
     
+    sns.heatmap(conf_matrix, annot=True, fmt=".2f", cmap="Blues")
+    plt.show()
+    joblib.dump(model, "lgbm.pkl")
     
-    return accuracy, conf_matrix, precision, recall, f1
+    return accuracy, conf_matrix, precision, recall, f1, log_loss_value, balanced_accuracy, roc_auc
 
 # Train and evaluate each model
 results = {}
